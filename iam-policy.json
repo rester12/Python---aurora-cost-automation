@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DescribeAuroraClusters",
+      "Effect": "Allow",
+      "Action": "rds:DescribeDBClusters",
+      "Resource": "*"
+    },
+    {
+      "Sid": "ReadClusterTags",
+      "Effect": "Allow",
+      "Action": "rds:ListTagsForResource",
+      "Resource": "*"
+    },
+    {
+      "Sid": "StopAuroraClusters",
+      "Effect": "Allow",
+      "Action": "rds:StopDBCluster",
+      "Resource": "*"
+    },
+    {
+      "Sid": "WriteLambdaLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    }
+  ]
+}
