@@ -1,79 +1,107 @@
-# Aurora Cost Automation
+# Python: Aurora Cost Automation
 
-A safety-first AWS Lambda project that discovers Amazon Aurora clusters, reads their tags, and stops only clusters that meet both conditions:
+## Overview
 
-- the cluster has the exact tag `environment=dev`
-- the cluster status is `available`
+This hands-on portfolio project demonstrates how Python and AWS Lambda can automate cost-control actions for Amazon Aurora. The function uses Boto3 to discover Aurora DB clusters, retrieve their tags, evaluate their current status, and stop only clusters tagged exactly `environment=dev` while they are `available`.
 
-The function defaults to dry-run mode, so qualifying clusters are reported without being changed until live mode is explicitly enabled.
+The automation defaults to dry-run mode. A qualifying cluster is reported without being changed until live mode is explicitly enabled. The project was validated locally and in AWS Lambda, with execution decisions recorded in CloudWatch Logs.
 
-## What this project demonstrates
+This is a personal cloud-automation lab designed to practice Python, AWS SDK usage, IAM, Lambda, testing, and defensive infrastructure automation. It is not presented as a production deployment.
 
-- AWS SDK for Python (Boto3)
-- AWS Lambda and CloudWatch Logs
-- Least-privilege IAM permissions
-- Aurora cluster-level operations
-- Pagination with the RDS API
-- Defensive tag and status checks
-- Unit testing with fake AWS clients
-- Safe infrastructure automation through dry-run defaults
+## Medium Article
+
+A complete project walkthrough, troubleshooting record, and lessons-learned article will be added after publication.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    A["Lambda or local Python"] --> B["Amazon RDS API"]
-    B --> C["Describe Aurora clusters"]
-    C --> D["Read cluster tags"]
-    D --> E{"environment=dev?"}
-    E -- No --> F["Skip and log"]
-    E -- Yes --> G{"status=available?"}
-    G -- No --> F
-    G -- Yes --> H{"DRY_RUN enabled?"}
-    H -- Yes --> I["Report intended stop"]
-    H -- No --> J["Stop DB cluster"]
-    F --> K["CloudWatch Logs"]
-    I --> K
-    J --> K
+    Admin["Administrator"] --> Local["Windows, PowerShell, and VS Code"]
+    Local --> CLI["AWS CLI"]
+    Local --> Tests["pytest Test Suite"]
+
+    Lambda["AWS Lambda"] --> RDS["Amazon RDS API"]
+    RDS --> Discover["Describe Aurora Clusters"]
+    Discover --> Tags["Retrieve Cluster Tags"]
+    Tags --> TagCheck{"environment=dev?"}
+    TagCheck -- No --> Skip["Skip and Log"]
+    TagCheck -- Yes --> StatusCheck{"status=available?"}
+    StatusCheck -- No --> Skip
+    StatusCheck -- Yes --> DryRun{"DRY_RUN enabled?"}
+    DryRun -- Yes --> Simulate["Report Intended Stop"]
+    DryRun -- No --> Stop["Stop DB Cluster"]
+    Skip --> Logs["CloudWatch Logs"]
+    Simulate --> Logs
+    Stop --> Logs
 ```
 
-## Safety controls
+## Technologies Used
 
-The stop request is sent only when all of the following are true:
+- Python and pytest
+- Boto3 and Botocore
+- AWS CLI v2 and AWS CloudShell
+- AWS Lambda
+- Amazon Aurora MySQL-Compatible Edition
+- AWS Identity and Access Management (IAM)
+- Amazon CloudWatch Logs
+- Git and GitHub Actions
+- Windows PowerShell and Visual Studio Code
 
-1. The RDS resource is returned as a DB cluster.
-2. Its ARN is present and its tags can be retrieved.
-3. The exact `environment=dev` tag exists.
-4. Its current status is `available`.
-5. `DRY_RUN` has been explicitly set to a false value.
+## Project Objectives
 
-If `DRY_RUN` is missing, the application uses `true`. Accepted false values are `false`, `0`, and `no`.
+- Discover Aurora DB clusters through the paginated RDS API.
+- Retrieve tags by using each cluster's Amazon Resource Name (ARN).
+- Match the exact safety tag `environment=dev`.
+- Require the cluster status to be `available` before requesting a stop.
+- Default to dry-run mode so normal execution cannot stop a cluster.
+- Isolate the real `stop_db_cluster()` call behind explicit safety checks.
+- Handle missing ARNs, missing tags, malformed tags, and AWS API errors safely.
+- Deploy the tested code to AWS Lambda with a least-privilege execution role.
+- Record evaluation and action results in CloudWatch Logs.
+- Verify behavior locally, with mocked AWS calls, and against a temporary Aurora cluster.
 
-## Project structure
+## Repository Contents
 
 ```text
-aurora-cost-automation/
-├── .github/workflows/tests.yml
-├── tests/test_lambda_function.py
-├── .gitignore
-├── iam-policy.json
-├── lambda-trust-policy.json
-├── lambda_function.py
-├── README.md
-└── requirements-dev.txt
+.
+|-- .github/
+|   `-- workflows/
+|       `-- tests.yml
+|-- tests/
+|   `-- test_lambda_function.py
+|-- .gitattributes
+|-- .gitignore
+|-- iam-policy.json
+|-- lambda-trust-policy.json
+|-- lambda_function.py
+|-- README.md
+`-- requirements-dev.txt
 ```
 
-## Prerequisites
+## Safety Design
 
-- Windows PowerShell
-- Python 3.13 or newer
-- AWS CLI v2
-- An AWS identity authorized to inspect the target RDS resources
-- A configured AWS Region
+The function sends a stop request only when all of these conditions are true:
 
-For local development with credentials created by `aws login`, `boto3[crt]` supplies the AWS Common Runtime dependency required by the login credential provider.
+1. The resource is returned by `describe_db_clusters()`.
+2. The cluster response contains an ARN.
+3. Its tags can be retrieved successfully.
+4. The exact tag `environment=dev` exists.
+5. The cluster status is `available`.
+6. `DRY_RUN` has been explicitly set to a false value.
 
-## Local setup on Windows
+If `DRY_RUN` is absent, it defaults to `true`. Accepted false values are `false`, `0`, and `no`.
+
+The core decision is intentionally strict:
+
+```python
+would_stop = tag_matches and is_available
+```
+
+If the automation is uncertain, it skips the resource rather than guessing.
+
+## Local Development Setup
+
+The project was developed on Windows. From PowerShell in the repository root:
 
 ```powershell
 py -m venv .venv
@@ -82,6 +110,8 @@ python -m pip install --upgrade pip
 python -m pip install -r .\requirements-dev.txt
 ```
 
+For local development with credentials created by `aws login`, `boto3[crt]` supplies the AWS Common Runtime dependency required by the login credential provider.
+
 Confirm the active AWS identity and Region before making API calls:
 
 ```powershell
@@ -89,17 +119,32 @@ aws sts get-caller-identity
 aws configure get region
 ```
 
-Never store AWS credentials in this repository.
+AWS credentials, session tokens, account-specific resource identifiers, deployment ZIP files, and local environment files must not be committed.
 
-## Run the tests
+## Testing
+
+Run the complete test suite:
 
 ```powershell
 python -m pytest -v
 ```
 
-The suite covers tag matching, malformed and missing tags, cluster status checks, dry-run defaults, prevention of unsafe stop calls, qualified live-mode behavior, and the Lambda handler.
+The 15 automated tests validate:
 
-## Run locally in dry-run mode
+- exact tag matches
+- incorrect tag keys and values
+- empty and malformed tag data
+- available and stopped cluster states
+- dry-run mode enabled by default
+- explicit disabling of dry-run mode
+- prevention of stop calls during dry runs
+- prevention of stop calls for unqualified clusters
+- the stop call for a qualified cluster in live mode
+- Lambda handler execution in safe mode
+
+The tests use a fake RDS client for the stop operation, so the unit test suite does not modify AWS resources.
+
+## Local Execution
 
 Dry-run mode is the default:
 
@@ -108,11 +153,9 @@ Remove-Item Env:DRY_RUN -ErrorAction SilentlyContinue
 python .\lambda_function.py
 ```
 
-Expected actions are `dry-run` for a qualifying cluster and `skipped` for any cluster that fails a safety check.
+A qualifying cluster produces an `Action: dry-run` result. A cluster that fails any guard produces `Action: skipped`.
 
-## Run locally in live mode
-
-> Warning: this can stop every `available` Aurora cluster in the configured account and Region that is tagged exactly `environment=dev`.
+Live mode must be enabled explicitly:
 
 ```powershell
 $env:DRY_RUN = "false"
@@ -120,45 +163,82 @@ python .\lambda_function.py
 Remove-Item Env:DRY_RUN
 ```
 
-Restore safe mode immediately after the controlled run.
+> Warning: live mode can stop every `available` Aurora cluster in the configured AWS account and Region that is tagged exactly `environment=dev`.
 
-## Lambda deployment outline
+Safe mode should be restored immediately after a controlled live test.
 
-The deployment package contains `lambda_function.py` at the ZIP root. Configure Lambda with:
+## Lambda Deployment
+
+The deployment package contains `lambda_function.py` at the root of the ZIP file. The function uses these settings:
 
 | Setting | Value |
 |---|---|
 | Handler | `lambda_function.lambda_handler` |
-| Runtime | A supported Python runtime |
+| Runtime | Supported Python runtime |
 | Timeout | 30 seconds |
 | Memory | 128 MB |
-| Environment | `DRY_RUN=true` |
+| Environment variable | `DRY_RUN=true` |
 
-The runtime includes Boto3, so this small deployment does not package the local Windows virtual environment. Use `lambda-trust-policy.json` as the role trust policy and `iam-policy.json` as the starting permissions policy.
+The Lambda Python runtime includes Boto3, so the local Windows virtual environment is not added to the deployment package.
 
-## IAM permissions
+[`lambda-trust-policy.json`](lambda-trust-policy.json) allows the Lambda service to assume the execution role. [`iam-policy.json`](iam-policy.json) provides the RDS and CloudWatch Logs actions used by the function.
 
-The function needs these RDS actions:
+## IAM Permissions
+
+The Lambda execution role uses these RDS actions:
 
 - `rds:DescribeDBClusters`
 - `rds:ListTagsForResource`
 - `rds:StopDBCluster`
 
-It also needs permission to create and write its CloudWatch Logs streams. Review and narrow resource scope for the target AWS account before production use.
+It also permits the function to create its CloudWatch log group and stream and to write log events. The included policy is a lab starting point. Before production use, the stop permission should be narrowed to approved cluster ARNs wherever the IAM service supports the intended resource-level restriction.
 
-## Verification performed
+## End-to-End Validation
 
-This project was tested end to end in `us-east-1` with a tagged Aurora development cluster:
+The project was tested in `us-east-1` with a temporary Aurora development cluster:
 
-- local dry run identified the qualifying cluster without changing it
-- local live mode requested the cluster stop
-- a second run skipped the stopped cluster
-- Lambda dry-run mode preserved the available cluster
-- Lambda live mode stopped the qualifying cluster
-- CloudWatch Logs recorded the decisions and action
-- all 15 automated tests passed
-- temporary AWS lab resources were removed after validation
+- Created an Aurora cluster and writer instance through AWS CLI commands in CloudShell.
+- Applied the exact cluster tag `environment=dev`.
+- Confirmed a local dry run identified the cluster without modifying it.
+- Enabled local live mode and verified the cluster entered the stopping state.
+- Ran the program again and confirmed the stopped cluster was skipped.
+- Deployed the code to Lambda with `DRY_RUN=true`.
+- Confirmed the Lambda dry run preserved an available cluster.
+- Enabled Lambda live mode for one controlled invocation and verified the cluster stopped.
+- Restored Lambda to dry-run mode immediately after the test.
+- Reviewed the decisions and action in CloudWatch Logs.
+- Removed temporary Aurora, Lambda, log group, IAM role, and subnet-group resources after validation.
+- Passed all 15 local tests and the GitHub Actions test workflow.
 
-## Production considerations
+## Troubleshooting Highlights
 
-Before adapting this lab for production, consider restricting `StopDBCluster` to approved cluster ARNs, using deployment automation, adding alarms, using structured logs, validating engine eligibility, adding an explicit allowlist, scheduling through EventBridge, and requiring a change-control process for live mode.
+- **Boto3 could not use browser-login credentials:** Installed `boto3[crt]` so Botocore could use the login credential provider.
+- **The default DB subnet group did not exist:** Created a custom RDS DB subnet group using subnets from multiple Availability Zones.
+- **A stopped Aurora cluster blocked writer deletion:** Started the cluster, waited for the cluster and writer to become available, then deleted the writer before deleting the cluster.
+- **Windows PowerShell rejected `utf8NoBOM`:** Used ASCII for the small `{}` Lambda test-event file because Windows PowerShell 5.1 does not provide that encoding name.
+- **Tests could not import a new function:** Replaced and saved the complete source file, cleared cached files, and reran syntax checks before pytest.
+- **GitHub rejected password authentication:** Used Git Credential Manager's browser-based OAuth flow instead of a password or manually pasted token.
+
+## Security Considerations
+
+- Never commit AWS access keys, secret keys, session tokens, database passwords, private keys, account numbers, or live resource ARNs.
+- Keep `DRY_RUN=true` in Lambda except during an approved and monitored live invocation.
+- Use exact resource tags and consider adding an explicit cluster allowlist.
+- Restrict the execution role to the minimum required actions and resource scope.
+- Do not expose the Aurora database publicly when control-plane API access is sufficient.
+- Review CloudWatch Logs and alarms for unexpected automation behavior.
+- Delete temporary cloud resources after testing to avoid unnecessary charges.
+
+## Lessons Learned
+
+- AWS CLI and Boto3 can call the same service APIs, but Boto3 allows Python to evaluate responses and automate decisions.
+- Aurora lifecycle operations are performed at the cluster level rather than by stopping individual Aurora instances.
+- Dry-run defaults and independent guard conditions reduce the risk of unsafe infrastructure automation.
+- Mocked clients make it possible to verify action logic without calling real AWS services.
+- Pagination is important even when a lab account currently contains only one cluster.
+- IAM trust policies and permissions policies solve different problems and are both required for Lambda execution.
+- End-to-end validation should include the successful action, repeated execution, logs, tests, and resource cleanup.
+
+## Production Considerations
+
+Before adapting this lab for production, consider deployment automation, structured logging, alarms, engine eligibility checks, an explicit cluster allowlist, tighter IAM resource scope, EventBridge scheduling, change-control approval for live mode, and a separate start/recovery workflow.
