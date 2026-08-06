@@ -14,28 +14,7 @@ A complete project walkthrough, troubleshooting record, and lessons-learned arti
 
 ## Architecture
 
-```mermaid
-graph LR;
-    A[Administrator] --> B[Windows PowerShell and VS Code];
-    B --> C[Python and pytest];
-    C --> D[Validated Lambda Code];
-    B --> E[AWS CLI and CloudShell];
-    D --> F[AWS Lambda];
-    E --> F;
-    F --> G[Amazon RDS API];
-    G --> H[Discover Aurora Clusters];
-    H --> I[Retrieve Cluster Tags];
-    I --> J{environment=dev};
-    J -->|No| K[Skip Cluster];
-    J -->|Yes| L{Status Available};
-    L -->|No| K;
-    L -->|Yes| M{Dry Run Enabled};
-    M -->|Yes| N[Log Intended Stop];
-    M -->|No| O[Stop Aurora Cluster];
-    K --> P[CloudWatch Logs];
-    N --> P;
-    O --> P;
-```
+![Python Aurora Cost Automation AWS architecture](docs/aurora-cost-automation-architecture.png)
 
 ## Technologies Used
 
@@ -69,6 +48,8 @@ graph LR;
 |-- .github/
 |   `-- workflows/
 |       `-- tests.yml
+|-- docs/
+|   `-- aurora-cost-automation-architecture.png
 |-- tests/
 |   `-- test_lambda_function.py
 |-- .gitattributes
