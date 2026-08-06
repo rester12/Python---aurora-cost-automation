@@ -14,9 +14,28 @@ A complete project walkthrough, troubleshooting record, and lessons-learned arti
 
 ## Architecture
 
-![Architecture diagram showing local development, automated testing, and the AWS Lambda safety workflow](docs/architecture.svg)
-
-The diagram separates local development and validation from the deployed AWS workflow. At runtime, the Lambda function discovers clusters, retrieves their tags, and applies the tag, status, and dry-run guards before it skips, simulates, or requests a stop. Every outcome is written to CloudWatch Logs.
+```mermaid
+graph LR;
+    A[Administrator] --> B[Windows PowerShell and VS Code];
+    B --> C[Python and pytest];
+    C --> D[Validated Lambda Code];
+    B --> E[AWS CLI and CloudShell];
+    D --> F[AWS Lambda];
+    E --> F;
+    F --> G[Amazon RDS API];
+    G --> H[Discover Aurora Clusters];
+    H --> I[Retrieve Cluster Tags];
+    I --> J{environment=dev};
+    J -->|No| K[Skip Cluster];
+    J -->|Yes| L{Status Available};
+    L -->|No| K;
+    L -->|Yes| M{Dry Run Enabled};
+    M -->|Yes| N[Log Intended Stop];
+    M -->|No| O[Stop Aurora Cluster];
+    K --> P[CloudWatch Logs];
+    N --> P;
+    O --> P;
+```
 
 ## Technologies Used
 
@@ -50,8 +69,6 @@ The diagram separates local development and validation from the deployed AWS wor
 |-- .github/
 |   `-- workflows/
 |       `-- tests.yml
-|-- docs/
-|   `-- architecture.svg
 |-- tests/
 |   `-- test_lambda_function.py
 |-- .gitattributes
