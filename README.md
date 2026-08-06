@@ -14,26 +14,9 @@ A complete project walkthrough, troubleshooting record, and lessons-learned arti
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Admin["Administrator"] --> Local["Windows, PowerShell, and VS Code"]
-    Local --> CLI["AWS CLI"]
-    Local --> Tests["pytest Test Suite"]
+![Architecture diagram showing local development, automated testing, and the AWS Lambda safety workflow](docs/architecture.svg)
 
-    Lambda["AWS Lambda"] --> RDS["Amazon RDS API"]
-    RDS --> Discover["Describe Aurora Clusters"]
-    Discover --> Tags["Retrieve Cluster Tags"]
-    Tags --> TagCheck{"environment=dev?"}
-    TagCheck -- No --> Skip["Skip and Log"]
-    TagCheck -- Yes --> StatusCheck{"status=available?"}
-    StatusCheck -- No --> Skip
-    StatusCheck -- Yes --> DryRun{"DRY_RUN enabled?"}
-    DryRun -- Yes --> Simulate["Report Intended Stop"]
-    DryRun -- No --> Stop["Stop DB Cluster"]
-    Skip --> Logs["CloudWatch Logs"]
-    Simulate --> Logs
-    Stop --> Logs
-```
+The diagram separates local development and validation from the deployed AWS workflow. At runtime, the Lambda function discovers clusters, retrieves their tags, and applies the tag, status, and dry-run guards before it skips, simulates, or requests a stop. Every outcome is written to CloudWatch Logs.
 
 ## Technologies Used
 
@@ -67,6 +50,8 @@ flowchart LR
 |-- .github/
 |   `-- workflows/
 |       `-- tests.yml
+|-- docs/
+|   `-- architecture.svg
 |-- tests/
 |   `-- test_lambda_function.py
 |-- .gitattributes

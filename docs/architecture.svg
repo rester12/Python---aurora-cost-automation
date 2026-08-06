@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title description">
+  <title id="title">Python Aurora Cost Automation architecture</title>
+  <desc id="description">Development tools test the Python automation. At runtime, AWS Lambda discovers Aurora clusters through the RDS API, retrieves tags, applies tag, status, and dry-run safety checks, and then skips, simulates, or stops a cluster while recording the result in CloudWatch Logs.</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+    </marker>
+    <style>
+      .lane { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; }
+      .lane-title { font: 700 22px Arial, sans-serif; fill: #0f172a; }
+      .box { fill: #ffffff; stroke: #64748b; stroke-width: 2; }
+      .aws { fill: #fff7ed; stroke: #ea580c; stroke-width: 2.5; }
+      .guard { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; }
+      .safe { fill: #f0fdf4; stroke: #16a34a; stroke-width: 2.5; }
+      .skip { fill: #fef2f2; stroke: #dc2626; stroke-width: 2.5; }
+      .label { font: 600 17px Arial, sans-serif; fill: #0f172a; text-anchor: middle; }
+      .small { font: 500 14px Arial, sans-serif; fill: #334155; text-anchor: middle; }
+      .edge { fill: none; stroke: #475569; stroke-width: 2.5; marker-end: url(#arrow); }
+      .edge-label { font: 700 14px Arial, sans-serif; fill: #334155; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="760" fill="#ffffff"/>
+
+  <rect class="lane" x="30" y="30" width="1340" height="185" rx="18"/>
+  <text class="lane-title" x="55" y="68">Development and validation</text>
+
+  <rect class="box" x="80" y="105" width="190" height="72" rx="12"/>
+  <text class="label" x="175" y="135">Administrator</text>
+  <text class="small" x="175" y="158">Windows workstation</text>
+
+  <rect class="box" x="380" y="105" width="230" height="72" rx="12"/>
+  <text class="label" x="495" y="135">PowerShell + VS Code</text>
+  <text class="small" x="495" y="158">Local development</text>
+
+  <rect class="safe" x="735" y="82" width="210" height="62" rx="12"/>
+  <text class="label" x="840" y="109">pytest</text>
+  <text class="small" x="840" y="130">15 automated tests</text>
+
+  <rect class="box" x="735" y="151" width="210" height="48" rx="12"/>
+  <text class="label" x="840" y="181">AWS CLI</text>
+
+  <rect class="safe" x="1070" y="105" width="230" height="72" rx="12"/>
+  <text class="label" x="1185" y="135">GitHub Actions</text>
+  <text class="small" x="1185" y="158">Independent test run</text>
+
+  <path class="edge" d="M270 141 H380"/>
+  <path class="edge" d="M610 127 H735"/>
+  <path class="edge" d="M610 155 H690 V175 H735"/>
+  <path class="edge" d="M945 113 H1010 V141 H1070"/>
+
+  <rect class="lane" x="30" y="245" width="1340" height="485" rx="18"/>
+  <text class="lane-title" x="55" y="283">AWS runtime workflow</text>
+
+  <rect class="aws" x="70" y="330" width="170" height="72" rx="12"/>
+  <text class="label" x="155" y="360">AWS Lambda</text>
+  <text class="small" x="155" y="383">Python handler</text>
+
+  <rect class="aws" x="300" y="330" width="170" height="72" rx="12"/>
+  <text class="label" x="385" y="360">Amazon RDS API</text>
+  <text class="small" x="385" y="383">Boto3 client</text>
+
+  <rect class="box" x="530" y="330" width="185" height="72" rx="12"/>
+  <text class="label" x="622.5" y="355">Discover clusters</text>
+  <text class="small" x="622.5" y="378">Paginated results</text>
+
+  <rect class="box" x="775" y="330" width="185" height="72" rx="12"/>
+  <text class="label" x="867.5" y="355">Retrieve tags</text>
+  <text class="small" x="867.5" y="378">Using cluster ARN</text>
+
+  <polygon class="guard" points="1085,316 1205,366 1085,416 965,366"/>
+  <text class="label" x="1085" y="361">environment=dev?</text>
+  <text class="small" x="1085" y="382">Exact match</text>
+
+  <polygon class="guard" points="1085,456 1205,506 1085,556 965,506"/>
+  <text class="label" x="1085" y="501">status=available?</text>
+  <text class="small" x="1085" y="522">Current state</text>
+
+  <polygon class="guard" points="790,456 910,506 790,556 670,506"/>
+  <text class="label" x="790" y="501">DRY_RUN enabled?</text>
+  <text class="small" x="790" y="522">Defaults to true</text>
+
+  <rect class="safe" x="390" y="470" width="190" height="72" rx="12"/>
+  <text class="label" x="485" y="500">Report intended stop</text>
+  <text class="small" x="485" y="523">No AWS change</text>
+
+  <rect class="aws" x="390" y="600" width="190" height="72" rx="12"/>
+  <text class="label" x="485" y="630">Stop DB cluster</text>
+  <text class="small" x="485" y="653">Live mode only</text>
+
+  <rect class="skip" x="1030" y="620" width="175" height="64" rx="12"/>
+  <text class="label" x="1117.5" y="648">Skip resource</text>
+  <text class="small" x="1117.5" y="670">Safety check failed</text>
+
+  <rect class="aws" x="70" y="565" width="210" height="84" rx="12"/>
+  <text class="label" x="175" y="599">CloudWatch Logs</text>
+  <text class="small" x="175" y="622">Evaluation, reason,</text>
+  <text class="small" x="175" y="641">and action result</text>
+
+  <path class="edge" d="M240 366 H300"/>
+  <path class="edge" d="M470 366 H530"/>
+  <path class="edge" d="M715 366 H775"/>
+  <path class="edge" d="M960 366 H965"/>
+
+  <path class="edge" d="M1085 416 V456"/>
+  <text class="edge-label" x="1108" y="440">Yes</text>
+
+  <path class="edge" d="M965 366 H925 V652 H1030"/>
+  <text class="edge-label" x="938" y="390">No</text>
+
+  <path class="edge" d="M965 506 H910"/>
+  <text class="edge-label" x="937" y="493">Yes</text>
+
+  <path class="edge" d="M1085 556 V620"/>
+  <text class="edge-label" x="1108" y="590">No</text>
+
+  <path class="edge" d="M670 506 H580"/>
+  <text class="edge-label" x="625" y="493">Yes</text>
+
+  <path class="edge" d="M790 556 V636 H580"/>
+  <text class="edge-label" x="812" y="590">No</text>
+
+  <path class="edge" d="M390 506 H330 V587 H280"/>
+  <path class="edge" d="M390 636 H280"/>
+  <path class="edge" d="M1030 652 H965 V700 H175 V649"/>
+</svg>
