@@ -65,6 +65,7 @@ flowchart LR
 |-- iam-policy.json
 |-- lambda-trust-policy.json
 |-- lambda_function.py
+|-- MEDIUM_ARTICLE.md
 |-- README.md
 `-- requirements-dev.txt
 ```
