@@ -14,7 +14,15 @@ A complete project walkthrough, troubleshooting record, and lessons-learned arti
 
 ## Architecture
 
-![Python Aurora Cost Automation AWS architecture](docs/aurora-cost-automation-architecture.png)
+```mermaid
+flowchart LR
+    Admin["Administrator using PowerShell and AWS CLI"] --> Lambda["AWS Lambda: Python and Boto3"]
+    Lambda --> Discover["Discover Aurora clusters"]
+    Discover --> Safety["Match environment=dev<br/>Require status=available"]
+    Safety -->|"DRY_RUN=true"| Logs["CloudWatch Logs<br/>Log intended action"]
+    Safety -->|"DRY_RUN=false"| Stop["Stop Aurora cluster"]
+    Stop --> Logs
+```
 
 ## Technologies Used
 
@@ -48,8 +56,6 @@ A complete project walkthrough, troubleshooting record, and lessons-learned arti
 |-- .github/
 |   `-- workflows/
 |       `-- tests.yml
-|-- docs/
-|   `-- aurora-cost-automation-architecture.png
 |-- tests/
 |   `-- test_lambda_function.py
 |-- .gitattributes
