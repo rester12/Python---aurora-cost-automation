@@ -230,4 +230,6 @@ The project was tested in `us-east-1` with a temporary Aurora development cluste
 
 ## Production Considerations
 
-Before adapting this lab for production, consider deployment automation, structured logging, alarms, engine eligibility checks, an explicit cluster allowlist, tighter IAM resource scope, EventBridge scheduling, change-control approval for live mode, and a separate start/recovery workflow.
+AWS automatically restarts a stopped Aurora cluster after seven days so it does not fall behind on required maintenance. A recurring cost-control design should therefore invoke the Lambda function on a deliberate Amazon EventBridge schedule so approved development clusters are evaluated again after an automatic restart. Storage and backup-related charges can also continue while a cluster is stopped. See [Stopping and starting an Amazon Aurora DB cluster](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-cluster-stop-start.html) for the current service behavior and limitations.
+
+Before adapting this lab for production, also consider deployment automation, structured logging, alarms, engine eligibility checks, an explicit cluster allowlist, tighter IAM resource scope, change-control approval for live mode, scheduling around maintenance windows and developer working hours, and a separate start/recovery workflow.
