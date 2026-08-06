@@ -10,7 +10,11 @@ This is a personal cloud-automation lab designed to practice Python, AWS SDK usa
 
 ## Medium Article
 
-A complete project walkthrough, troubleshooting record, and lessons-learned article will be added after publication.
+Read the complete project walkthrough on Medium:
+
+[Python: Automating Amazon Aurora Cost Control with AWS Lambda and Boto3](https://medium.com/@rester.mcglown/python-automating-amazon-aurora-cost-control-with-aws-lambda-and-boto3-b683187b3c60)
+
+The article covers the design decisions, safety controls, testing strategy, AWS deployment, troubleshooting lessons, end-to-end validation, and the production need for scheduled reevaluation with Amazon EventBridge.
 
 ## Architecture
 
